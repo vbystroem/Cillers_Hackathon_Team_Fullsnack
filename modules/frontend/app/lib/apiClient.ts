@@ -12,6 +12,7 @@ export interface ComplianceScore {
 
 export interface Analysis {
   id: string;
+  title: string;
   text: string;
   score: ComplianceScore;
   status: 'pending_review' | 'approved' | 'rejected';

@@ -33,6 +33,7 @@ class ComplianceScore(BaseModel):
 
 class Analysis(BaseModel):
     id: str
+    title: str
     text: str
     score: ComplianceScore
     status: AnalysisStatus
@@ -80,6 +81,71 @@ def get_app_version() -> str:
     except Exception as e:
         logger.warning(f"Failed to read version from pyproject.toml: {e}")
         return "unknown"
+
+def generate_ai_title(text: str, score: ComplianceScore) -> str:
+    """
+    Generate an AI-style title for the analysis based on content and score.
+    This simulates AI-generated titles using pattern matching and keywords.
+    """
+    text_lower = text.lower()
+    
+    # Detect main topics/themes
+    topics = []
+    
+    # Data and Privacy related
+    if any(word in text_lower for word in ["gdpr", "privacy", "personal data", "data protection"]):
+        topics.append("Data Privacy")
+    
+    # Security related
+    if any(word in text_lower for word in ["secure", "security", "encryption", "confidential"]):
+        topics.append("Security")
+    
+    # Compliance related
+    if any(word in text_lower for word in ["compliance", "regulatory", "regulation", "policy"]):
+        topics.append("Compliance")
+    
+    # Risk related
+    if any(word in text_lower for word in ["risk", "breach", "leak", "unauthorized", "violation"]):
+        topics.append("Risk")
+    
+    # Financial/Payment
+    if any(word in text_lower for word in ["payment", "financial", "credit card", "transaction"]):
+        topics.append("Financial")
+    
+    # Healthcare
+    if any(word in text_lower for word in ["health", "medical", "patient", "hipaa"]):
+        topics.append("Healthcare")
+    
+    # If no specific topics detected, use generic terms
+    if not topics:
+        topics = ["General Content"]
+    
+    # Generate title based on risk level and topics
+    risk_level = score.risk_level.capitalize()
+    topic_str = " & ".join(topics[:2])  # Use up to 2 topics
+    
+    # Create title variants based on risk and flags
+    if score.overall_score >= 80:
+        prefix = "Compliant"
+    elif score.overall_score >= 50:
+        prefix = "Moderate Risk"
+    else:
+        prefix = "High Risk"
+    
+    # Build title
+    if len(score.flags) > 0:
+        title = f"{prefix}: {topic_str} Analysis"
+    else:
+        title = f"{topic_str} Review - {risk_level} Risk"
+    
+    # Add word count indicator if text is short
+    word_count = len(text.split())
+    if word_count < 10:
+        title += f" (Brief)"
+    elif word_count > 100:
+        title += f" (Detailed)"
+    
+    return title
 
 def compute_compliance_score(text: str) -> ComplianceScore:
     """
@@ -211,9 +277,13 @@ async def create_analysis(
     # Compute compliance score
     score = compute_compliance_score(analysis_request.text)
     
+    # Generate AI title
+    title = generate_ai_title(analysis_request.text, score)
+    
     # Create analysis record
     analysis = Analysis(
         id=analysis_id,
+        title=title,
         text=analysis_request.text,
         score=score,
         status=AnalysisStatus.PENDING_REVIEW,

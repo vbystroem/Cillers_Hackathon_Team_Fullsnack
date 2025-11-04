@@ -65,10 +65,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <>
+    <div className="app-container">
+      <div className="bg-background px-4 pt-4 md:px-8 md:pt-8">
+        <div className="max-w-7xl mx-auto flex items-center">
+          <img 
+            src="/cerise-horisontal.svg" 
+            alt="Cerise Logo" 
+            className="h-8"
+          />
+        </div>
+      </div>
       <Outlet />
       <Toaster />
-    </>
+    </div>
   );
 }
 

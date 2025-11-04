@@ -53,6 +53,11 @@ export default function Home() {
       const response = await apiClient.submitAnalysis(textInput);
       toast.success('Analysis submitted successfully!');
       setAnalysisId(response.id);
+      
+      // Fetch the full analysis to get the title
+      const fullAnalysis = await apiClient.getAnalysis(response.id);
+      setResult(fullAnalysis);
+      
       setTextInput('');
       loadStats();
     } catch (error) {
@@ -180,7 +185,7 @@ export default function Home() {
             </div>
 
             {/* Statistics */}
-            {stats && (
+            {mode === 'reviewer' && stats && (
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-4 border-t">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">{stats.total_analyses}</div>
@@ -234,10 +239,16 @@ export default function Home() {
                   <Button onClick={handleSubmitAnalysis} disabled={loading} className="w-full">
                     {loading ? 'Submitting...' : 'Submit for Analysis'}
                   </Button>
-                  {analysisId && (
-                    <div className="p-4 rounded-lg bg-muted">
-                      <p className="text-sm font-medium mb-2">Analysis ID (save this):</p>
-                      <code className="text-sm font-mono break-all">{analysisId}</code>
+                  {analysisId && result && (
+                    <div className="p-4 rounded-lg bg-muted space-y-2">
+                      <div>
+                        <p className="text-sm font-medium mb-1">Title:</p>
+                        <p className="text-base font-semibold">{result.title}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium mb-1">Analysis ID (save this):</p>
+                        <code className="text-sm font-mono break-all">{analysisId}</code>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -365,9 +376,10 @@ export default function Home() {
                           <Card key={analysis.id} className="border-2">
                             <CardContent className="pt-6 space-y-4">
                               <div className="flex items-start justify-between">
-                                <div className="space-y-1 flex-1">
+                                <div className=" space-y-1 flex-1">
+                                  <h4 className="font-semibold text-lg">{analysis.title}</h4>
                                   <div className="flex items-center gap-2">
-                                    <h4 className="font-semibold">Analysis ID</h4>
+                                    <span className="text-xs text-muted-foreground">ID:</span>
                                     <code className="text-xs bg-muted px-2 py-1 rounded">
                                       {analysis.id.slice(0, 8)}...
                                     </code>
@@ -467,12 +479,13 @@ export default function Home() {
                             <CardContent className="pt-4">
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <code className="text-xs bg-muted px-2 py-1 rounded">
-                                    {analysis.id.slice(0, 12)}...
-                                  </code>
+                                  <h4 className="font-semibold text-sm">{analysis.title}</h4>
                                   {getStatusBadge(analysis.status)}
                                 </div>
-                                <p className="text-sm line-clamp-2">{analysis.text}</p>
+                                <code className="text-xs bg-muted px-2 py-1 rounded inline-block">
+                                  {analysis.id.slice(0, 12)}...
+                                </code>
+                                <p className="text-sm line-clamp-2 text-muted-foreground">{analysis.text}</p>
                                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                                   <span>Score: {analysis.score.overall_score}</span>
                                   <span>{new Date(analysis.created_at).toLocaleDateString()}</span>
